@@ -1,3 +1,5 @@
+require 'colorize'
+
 class Polynomial
     def initialize(equation)
       @equation     = equation
@@ -6,6 +8,16 @@ class Polynomial
       @solutions    = []
       @degree       = 0
       @delta        = 0
+      @max          = 0
+    end
+
+    def get_max
+      @equation.split('').each_with_index do |letter, index|
+        if letter == "^"
+          @max = @equation[index + 1].to_i if @max.to_i < @equation[index + 1].to_i
+        end
+      end
+      @max += 1
     end
 
     # Réduit l'equation
@@ -13,9 +25,13 @@ class Polynomial
       # Séparation de l'equation
       splitted_equation = @equation.split(" = ")
 
-      # Deux cotés de celle-ci
-      left  = splitted_equation.first
-      right = splitted_equation.last
+      if splitted_equation.first.length > splitted_equation.last.length
+        left = splitted_equation.first
+        right = splitted_equation.last
+      else
+        left = splitted_equation.last
+        right = splitted_equation.first
+      end
 
       left = left.split('')
       left.each_with_index do |letter, i|
@@ -38,28 +54,20 @@ class Polynomial
       # Left hash
       left.each do |term|
         value = term.split(" ").first.to_f
-        if term.include? "X^0"
-          @hash_left["X^0"] = value == 0.0 ? 1.0 : value
-        elsif term.include? "X^1"
-          @hash_left["X^1"] = value == 0.0 ? 1.0 : value
-        elsif term.include? "X^2"
-          @hash_left["X^2"] = value == 0.0 ? 1.0 : value
-        elsif term.include? "X^3"
-          @hash_left["X^3"] = value == 0.0 ? 1.0 : value
+        @max.times do |i|
+          if term.include? "X^#{i}"
+            @hash_left["X^#{i}"] = value == 0.0 ? 1.0 : value
+          end
         end
       end
 
       # Right hash
       right.each do |term|
         value = term.split(" ").first.to_f
-        if term.include? "X^0"
-          @hash_right["X^0"] = value == 0.0 ? 1.0 : value
-        elsif term.include? "X^1"
-          @hash_right["X^1"] = value == 0.0 ? 1.0 : value
-        elsif term.include? "X^2"
-          @hash_right["X^2"] = value == 0.0 ? 1.0 : value
-        elsif term.include? "X^3"
-          @hash_right["X^3"] = value == 0.0 ? 1.0 : value
+        @max.times do |i|
+          if term.include? "X^#{i}"
+            @hash_right["X^#{i}"] = value == 0.0 ? 1.0 : value
+          end
         end
       end
 
@@ -67,18 +75,41 @@ class Polynomial
 
     # Reduction de l'equation
     def reduce
-      if @hash_right["X^0"]
-        @hash_left["X^0"] = (@hash_left["X^0"] - @hash_right["X^0"]).floor(1)
-      elsif @hash_right["X^1"]
-        @hash_left["X^1"] = (@hash_left["X^1"] - @hash_right["X^1"]).floor(1)
-      elsif @hash_right["X^2"]
-        @hash_left["X^2"] = (@hash_left["X^2"] - @hash_right["X^2"]).floor(1)
-      elsif @hash_right["X^3"]
-        @hash_left["X^3"] = (@hash_left["X^3"] - @hash_right["X^3"]).floor(1)
+      @max.times do |i|
+        if @hash_right["X^#{i}"]
+          if @hash_right["X^#{i}"] > @hash_left["X^#{i}"]
+            @hash_right["X^#{i}"] = (@hash_right["X^#{i}"] - @hash_left["X^#{i}"]).floor(1)
+            @hash_left.delete("X^#{i}")
+          else
+            @hash_left["X^#{i}"] = (@hash_left["X^#{i}"] - @hash_right["X^#{i}"]).floor(1)
+            @hash_right.delete("X^#{i}")
+          end
+          if @hash_left["X^#{i}"] == 0.0
+            @hash_left.delete("X^#{i}")
+          end
+        end
       end
 
-      # Affichage de l'equation reduite
-      puts @hash_left
+      unless @hash_left.empty? and @hash_right.empty?
+        puts "Forme reduite".yellow
+        # Affichage de l'equation reduite
+        @hash_left.each_with_index do |(key, value), index|
+          print "#{value} * #{key} "
+          print "+ " unless @hash_left.count == (index + 1)
+        end
+        print "= "
+        unless @hash_right.empty?
+          @hash_right.each do |key, value|
+            print "#{value} * #{key} \n"
+          end
+        else
+          print "0 \n"
+        end
+      else
+        puts "#{@equation}"
+      end
+      return
+
     end
 
     # Determiner le degrée de l'equation
@@ -92,28 +123,38 @@ class Polynomial
         @degree = 1
       end
 
-      puts "Plynome du #{@degree}ème degré"
+      puts "Polynome du #{@degree}ème degré".yellow unless @degree == 0
     end
 
     # Resolution de l'equation
     def resolve
+      self.get_max
       self.parse
       self.reduce
       self.degree
 
-      # Si c'est du second degré...
-      if @degree == 2
+      if @hash_left.empty?
+        puts "Tous les nombres réels sont solution".green
+        return
+      end
+
+      if @degree == 0
+        puts "Il n'y a pas de solutions".red
+      elsif @degree == 1
+        puts "Il y a une solution".green
+        @solutions.push((@hash_right["X^0"] / @hash_left["X^1"]))
+      elsif @degree == 2
           # Calcul du discriminant
           @delta = (@hash_left["X^1"] ** 2) - 4 * @hash_left["X^2"] * @hash_left["X^0"]
-          puts "Delta: #{@delta}"
+          puts "Delta: #{@delta}".yellow
           # Solutions
           if @delta < 0
-            puts "Le polynome ne possede aucune solution réelle"
+            puts "Le polynome ne possede aucune solution réelle".red
           elsif @delta == 0
-            puts "Le polynome possede 1 solution réelle"
+            puts "Le polynome possede 1 solution réelle".green
             @solutions.push((-@hash_left["X^1"]) / 2 * @hash_left["X^2"])
           else
-            puts "Le polynome possede 2 solutions réelles"
+            puts "Le polynome possede 2 solutions réelles".green
             @solutions.push((-@hash_left["X^1"] - Math.sqrt(@delta)) / (2 * @hash_left["X^2"]))
             @solutions.push((-@hash_left["X^1"] + Math.sqrt(@delta)) / (2 * @hash_left["X^2"]))
           end
@@ -122,6 +163,7 @@ class Polynomial
       @solutions.each do |solution|
         puts "#{solution}"
       end
+
     end
 
 end
