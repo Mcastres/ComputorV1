@@ -11,6 +11,23 @@ class Polynomial
       @max          = 0
     end
 
+    def sqrt(x)
+      # Base cases
+      if x == 0 or x == 1
+          return x
+      end
+
+      # Staring from 1, try all numbers until
+      # i*i is greater than or equal to x.
+      i = 1
+      result = 1
+      while result <= x
+          i += 1
+          result = i * i
+      end
+      return (i - 1)
+    end
+
     def get_max
       @equation.split('').each_with_index do |letter, index|
         if letter == "^"
@@ -23,7 +40,7 @@ class Polynomial
     # Réduit l'equation
     def parse
       # Séparation de l'equation
-      splitted_equation = @equation.split(" = ")
+      splitted_equation = @equation.split(" =")
 
       if splitted_equation.first.length > splitted_equation.last.length
         left = splitted_equation.first
@@ -51,24 +68,30 @@ class Polynomial
       end
       right = right.join('').split(' +')
 
-      # Left hash
+      # Creation des hash
       left.each do |term|
         value = term.split(" ").first.to_f
         @max.times do |i|
           if term.include? "X^#{i}"
-            @hash_left["X^#{i}"] = value == 0.0 ? 1.0 : value
+            @hash_left["X^#{i}"] = value unless value == 0.0
           end
         end
       end
 
-      # Right hash
       right.each do |term|
         value = term.split(" ").first.to_f
         @max.times do |i|
           if term.include? "X^#{i}"
-            @hash_right["X^#{i}"] = value == 0.0 ? 1.0 : value
+            @hash_right["X^#{i}"] = value unless value == 0.0
           end
         end
+      end
+
+      # Inversion des hash si necessaire
+      if @hash_left.count < @hash_right.count
+        tmp = @hash_left
+        @hash_left = @hash_right
+        @hash_right = tmp
       end
 
     end
@@ -76,7 +99,7 @@ class Polynomial
     # Reduction de l'equation
     def reduce
       @max.times do |i|
-        if @hash_right["X^#{i}"]
+        if @hash_right["X^#{i}"] and @hash_left["X^#{i}"]
           @hash_left["X^#{i}"] = (@hash_left["X^#{i}"] - @hash_right["X^#{i}"]).floor(1)
           @hash_right.delete("X^#{i}")
           if @hash_left["X^#{i}"] == 0.0
@@ -85,14 +108,16 @@ class Polynomial
         end
       end
 
+      # Affichage de la forme reduite
       unless @hash_left.empty? and @hash_right.empty?
         puts "Forme reduite".yellow
-        # Affichage de l'equation reduite
+        # Cote gauche
         @hash_left.each_with_index do |(key, value), index|
           print "#{value} * #{key} "
           print "+ " unless @hash_left.count == (index + 1)
         end
         print "= "
+        # Cote droit si existant
         unless @hash_right.empty?
           @hash_right.each do |key, value|
             print "#{value} * #{key} \n"
@@ -103,19 +128,19 @@ class Polynomial
       else
         puts "#{@equation}"
       end
-      return
 
     end
 
     # Determiner le degrée de l'equation
     def degree
-      if @hash_left["X^3"]
-        puts "L'equation polynomial est de degré supérieur à 2"
-        return
-      elsif @hash_left["X^2"]
-        @degree = 2
-      elsif @hash_left["X^1"]
-        @degree = 1
+      @max.times do |i|
+        if @hash_left["X^#{i}"] and i > 2
+          @degree = i
+        elsif @hash_left["X^#{i}"] and i == 2
+          @degree = 2
+        elsif @hash_left["X^#{i}"] and i == 1
+          @degree = 1
+        end
       end
 
       puts "Polynome du #{@degree}ème degré".yellow unless @degree == 0
@@ -123,10 +148,10 @@ class Polynomial
 
     # Resolution de l'equation
     def resolve
-      self.get_max
-      self.parse
-      self.reduce
-      self.degree
+      get_max
+      parse
+      reduce
+      degree
 
       if @hash_left.empty?
         puts "Tous les nombres réels sont solution".green
@@ -150,9 +175,11 @@ class Polynomial
             @solutions.push((-@hash_left["X^1"]) / 2 * @hash_left["X^2"])
           else
             puts "Le polynome admet 2 solutions réelles".green
-            @solutions.push((-@hash_left["X^1"] - Math.sqrt(@delta)) / (2 * @hash_left["X^2"]))
-            @solutions.push((-@hash_left["X^1"] + Math.sqrt(@delta)) / (2 * @hash_left["X^2"]))
+            @solutions.push((-@hash_left["X^1"] - sqrt(@delta)) / (2 * @hash_left["X^2"]))
+            @solutions.push((-@hash_left["X^1"] + sqrt(@delta)) / (2 * @hash_left["X^2"]))
           end
+      else
+        puts "L'equation polynomial est de degré supérieur à 2".red
       end
 
       @solutions.each do |solution|
@@ -168,5 +195,26 @@ if ARGV[0].nil? || ARGV[1]
   return
 end
 
+tests = [
+  "1 * X^0 + 2 * X^1 = - 1 * X^0 + 4 * X^1",
+  "-1 * X^0 - 2 * X^1 = 1 * X^0 + 2 * X^1",
+  "1 * X^0 + 2 * X^1 + 3 * X^2 = - 1 * X^0 + 4 * X^1 + 3 * X^2",
+  "1 * X^0 + 2 * X^1 + 2 * X^2 = - 1 * X^0 + 4 * X^1 + 3 * X^2",
+  "1 * X^0 + 2 * X^1 + 4 * X^2 = - 1 * X^0 + 4 * X^1 + 3 * X^2",
+  "2 * X^0 + 2 * X^1 + 4 * X^2 = - 1 * X^0 + 4 * X^1 + 3 * X^2",
+  "1 * X^0 + 2 * X^1 + 4 * X^2 = 0 * X^0 + 4 * X^1 + 3 * X^2",
+  "1 * X^0 + 2 * X^1 + 4 * X^2 = 0 * X^0 + 4 * X^1 + 3 * X^2 + 0 * X^3 + 0 * X^4 + 0 * X^5",
+  "1 * X^0 + 2.5 * X^1 = - 1.561151 * X^0 + 4.000 * X^1",
+  "1.8526 * X^0 + 2.989 * X^1 + 2.16 * X^2 = - 1.122241 * X^0 + 4.999 * X^1 + 3.25 * X^2",
+  "1 * X^0 = 2 * X^0",
+  "1 * X^0 = 1 * X^0",
+  "1 * X^0 + 2 * X^1 + 4 * X^2 = 0 * X^0 + 4 * X^1 + 3 * X^2 + 0 * X^3 + 0 * X^4 + 2 * X^5",
+]
+
 polynome = Polynomial.new(ARGV[0])
 polynome.resolve
+
+# tests.each do |test|
+#   polynome = Polynomial.new(test)
+#   polynome.resolve
+# end
