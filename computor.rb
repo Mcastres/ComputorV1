@@ -77,13 +77,8 @@ class Polynomial
     def reduce
       @max.times do |i|
         if @hash_right["X^#{i}"]
-          if @hash_right["X^#{i}"] > @hash_left["X^#{i}"]
-            @hash_right["X^#{i}"] = (@hash_right["X^#{i}"] - @hash_left["X^#{i}"]).floor(1)
-            @hash_left.delete("X^#{i}")
-          else
-            @hash_left["X^#{i}"] = (@hash_left["X^#{i}"] - @hash_right["X^#{i}"]).floor(1)
-            @hash_right.delete("X^#{i}")
-          end
+          @hash_left["X^#{i}"] = (@hash_left["X^#{i}"] - @hash_right["X^#{i}"]).floor(1)
+          @hash_right.delete("X^#{i}")
           if @hash_left["X^#{i}"] == 0.0
             @hash_left.delete("X^#{i}")
           end
@@ -142,19 +137,19 @@ class Polynomial
         puts "Il n'y a pas de solutions".red
       elsif @degree == 1
         puts "Il y a une solution".green
-        @solutions.push((@hash_right["X^0"] / @hash_left["X^1"]))
+        @solutions.push((-@hash_left["X^0"] / @hash_left["X^1"]))
       elsif @degree == 2
           # Calcul du discriminant
           @delta = (@hash_left["X^1"] ** 2) - 4 * @hash_left["X^2"] * @hash_left["X^0"]
           puts "Delta: #{@delta}".yellow
           # Solutions
           if @delta < 0
-            puts "Le polynome ne possede aucune solution réelle".red
+            puts "Le polynome n'admet aucune solution réelle".red
           elsif @delta == 0
-            puts "Le polynome possede 1 solution réelle".green
+            puts "Le polynome admet 1 solution réelle".green
             @solutions.push((-@hash_left["X^1"]) / 2 * @hash_left["X^2"])
           else
-            puts "Le polynome possede 2 solutions réelles".green
+            puts "Le polynome admet 2 solutions réelles".green
             @solutions.push((-@hash_left["X^1"] - Math.sqrt(@delta)) / (2 * @hash_left["X^2"]))
             @solutions.push((-@hash_left["X^1"] + Math.sqrt(@delta)) / (2 * @hash_left["X^2"]))
           end
