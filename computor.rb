@@ -12,20 +12,7 @@ class Polynomial
     end
 
     def sqrt(x)
-      # Base cases
-      if x == 0 or x == 1
-          return x
-      end
-
-      # Staring from 1, try all numbers until
-      # i*i is greater than or equal to x.
-      i = 1
-      result = 1
-      while result <= x
-          i += 1
-          result = i * i
-      end
-      return (i - 1)
+      x**(0.5)
     end
 
     def get_max
@@ -87,6 +74,9 @@ class Polynomial
         end
       end
 
+      unless @hash_left["X^0"]
+        @hash_left["X^0"] = 0.0
+      end
       # Inversion des hash si necessaire
       if @hash_left.count < @hash_right.count
         tmp = @hash_left
@@ -170,6 +160,15 @@ class Polynomial
           # Solutions
           if @delta < 0
             puts "Le polynome n'admet aucune solution réelle".red
+            puts "En revanche il admet 2 solutions complexes".green
+
+            @solutions.push("(#{-@hash_left["X^1"]} - i * sqrt(#{@delta.abs})) / 2 * (#{@hash_left["X^2"]})")
+            @solutions.push("(#{-@hash_left["X^1"]} + i * sqrt(#{@delta.abs})) / 2 * (#{@hash_left["X^2"]})")
+
+            @solutions.push("Solutions:".green)
+
+            @solutions.push(((-@hash_left["X^1"] - sqrt(@delta)) / (2 * @hash_left["X^2"])).to_c)
+            @solutions.push(((-@hash_left["X^1"] + sqrt(@delta)) / (2 * @hash_left["X^2"])).to_c)
           elsif @delta == 0
             puts "Le polynome admet 1 solution réelle".green
             @solutions.push((-@hash_left["X^1"]) / 2 * @hash_left["X^2"])
@@ -190,11 +189,6 @@ class Polynomial
 
 end
 
-if ARGV[0].nil? || ARGV[1]
-  puts "Please provide just one equation"
-  return
-end
-
 tests = [
   "1 * X^0 + 2 * X^1 = - 1 * X^0 + 4 * X^1",
   "-1 * X^0 - 2 * X^1 = 1 * X^0 + 2 * X^1",
@@ -210,6 +204,11 @@ tests = [
   "1 * X^0 = 1 * X^0",
   "1 * X^0 + 2 * X^1 + 4 * X^2 = 0 * X^0 + 4 * X^1 + 3 * X^2 + 0 * X^3 + 0 * X^4 + 2 * X^5",
 ]
+
+if ARGV[0].nil? || ARGV[1]
+  puts "Please provide just one equation"
+  return
+end
 
 polynome = Polynomial.new(ARGV[0])
 polynome.resolve
