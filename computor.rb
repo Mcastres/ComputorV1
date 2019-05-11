@@ -16,12 +16,11 @@ class Polynomial
     end
 
     def get_max
-      @equation.split('').each_with_index do |letter, index|
-        if letter == "^"
-          @max = @equation[index + 1].to_i if @max.to_i < @equation[index + 1].to_i
-        end
+      tmp = @equation.split("X^")[1..-1]
+      tmp.each do |t|
+        value = t.gsub(/\s.+/, '').to_i
+        @max = value + 1 unless @max > value
       end
-      @max += 1
     end
 
     # Réduit l'equation
@@ -59,6 +58,10 @@ class Polynomial
       left.each do |term|
         value = term.split(" ").first.to_f
         @max.times do |i|
+          if @max > 3
+            @degree = @max
+            return
+          end
           if term.include? "X^#{i}"
             @hash_left["X^#{i}"] = value unless value == 0.0
           end
@@ -68,6 +71,10 @@ class Polynomial
       right.each do |term|
         value = term.split(" ").first.to_f
         @max.times do |i|
+          if @max > 3
+            @degree = @max
+            return
+          end
           if term.include? "X^#{i}"
             @hash_right["X^#{i}"] = value unless value == 0.0
           end
@@ -89,7 +96,7 @@ class Polynomial
     # Reduction de l'equation
     def reduce
       @max.times do |i|
-        if @hash_right["X^#{i}"] and @hash_left["X^#{i}"]
+        if @hash_right["X^#{i}"] and @hash_left["X^#{i}"] and @hash_right["X^#{i}"] != 0.0 and @hash_left["X^#{i}"] != 0.0
           @hash_left["X^#{i}"] = (@hash_left["X^#{i}"] - @hash_right["X^#{i}"]).floor(1)
           @hash_right.delete("X^#{i}")
           if @hash_left["X^#{i}"] == 0.0
@@ -123,7 +130,12 @@ class Polynomial
 
     # Determiner le degrée de l'equation
     def degree
+      if @max > 3
+        @degree = @max
+        return
+      end
       @max.times do |i|
+        puts i
         if @hash_left["X^#{i}"] and i > 2
           @degree = i
         elsif @hash_left["X^#{i}"] and i == 2
@@ -140,10 +152,10 @@ class Polynomial
     def resolve
       get_max
       parse
-      reduce
+      reduce if @degree < 3
       degree
 
-      if @hash_left.empty?
+      if @hash_left.empty? and @degree < 3
         puts "Tous les nombres réels sont solution".green
         return
       end
