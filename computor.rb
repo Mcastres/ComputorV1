@@ -234,15 +234,18 @@ tests = [
   "1 * X^0 + 2 * X^1 + 4 * X^2 = 0 * X^0 + 4 * X^1 + 3 * X^2 + 0 * X^3 + 0 * X^4 + 2 * X^5",
 ]
 
-if ARGV[0].nil? || ARGV[1]
-  puts "Please provide just one equation"
+# Si on a pas de parametres
+if ARGV.length < 1
+  puts "Please provide at least an equation"
   return
+# Si le parametre est test
+elsif ARGV[0] == "tests"
+  tests.each do |test|
+    polynome = Polynomial.new(test)
+    polynome.resolve
+  end
+# Sinon
+else
+  polynome = Polynomial.new(ARGV[0])
+  polynome.resolve
 end
-
-polynome = Polynomial.new(ARGV[0])
-polynome.resolve
-
-# tests.each do |test|
-#   polynome = Polynomial.new(test)
-#   polynome.resolve
-# end
