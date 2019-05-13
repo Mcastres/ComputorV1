@@ -58,10 +58,6 @@ class Polynomial
       left.each do |term|
         value = term.split(" ").first.to_f
         @max.times do |i|
-          if @max > 3
-            @degree = @max
-            return
-          end
           if term.include? "X^#{i}"
             @hash_left["X^#{i}"] = value unless value == 0.0
           end
@@ -71,10 +67,6 @@ class Polynomial
       right.each do |term|
         value = term.split(" ").first.to_f
         @max.times do |i|
-          if @max > 3
-            @degree = @max
-            return
-          end
           if term.include? "X^#{i}"
             @hash_right["X^#{i}"] = value unless value == 0.0
           end
@@ -96,7 +88,7 @@ class Polynomial
     # Reduction de l'equation
     def reduce
       @max.times do |i|
-        if @hash_right["X^#{i}"] and @hash_left["X^#{i}"] and @hash_right["X^#{i}"] != 0.0 and @hash_left["X^#{i}"] != 0.0
+        if @hash_right["X^#{i}"] and @hash_left["X^#{i}"]
           @hash_left["X^#{i}"] = (@hash_left["X^#{i}"] - @hash_right["X^#{i}"]).floor(1)
           @hash_right.delete("X^#{i}")
           if @hash_left["X^#{i}"] == 0.0
@@ -130,18 +122,9 @@ class Polynomial
 
     # Determiner le degrée de l'equation
     def degree
-      if @max > 3
-        @degree = @max
-        return
-      end
       @max.times do |i|
-        puts i
-        if @hash_left["X^#{i}"] and i > 2
+        if @hash_left["X^#{i}"]
           @degree = i
-        elsif @hash_left["X^#{i}"] and i == 2
-          @degree = 2
-        elsif @hash_left["X^#{i}"] and i == 1
-          @degree = 1
         end
       end
 
@@ -152,45 +135,52 @@ class Polynomial
     def resolve
       get_max
       parse
-      reduce if @degree < 3
+      reduce
       degree
 
-      if @hash_left.empty? and @degree < 3
-        puts "Tous les nombres réels sont solution".green
-        return
-      end
+      begin
 
-      if @degree == 0
-        puts "Il n'y a pas de solutions".red
-      elsif @degree == 1
-        puts "Il y a une solution".green
-        @solutions.push((-@hash_left["X^0"] / @hash_left["X^1"]))
-      elsif @degree == 2
-          # Calcul du discriminant
-          @delta = (@hash_left["X^1"] ** 2) - 4 * @hash_left["X^2"] * @hash_left["X^0"]
-          puts "Delta: #{@delta}".yellow
-          # Solutions
-          if @delta < 0
-            puts "Le polynome n'admet aucune solution réelle".red
-            puts "En revanche il admet 2 solutions complexes".green
+        if @hash_left.empty? and @degree < 3
+          puts "Tous les nombres réels sont solution".green
+          return
+        end
 
-            @solutions.push("(#{-@hash_left["X^1"]} - i * sqrt(#{@delta.abs})) / 2 * (#{@hash_left["X^2"]})")
-            @solutions.push("(#{-@hash_left["X^1"]} + i * sqrt(#{@delta.abs})) / 2 * (#{@hash_left["X^2"]})")
+        if @degree == 0
+          puts "Il n'y a pas de solutions".red
+        elsif @degree == 1
+          puts "Il y a une solution".green
+          @solutions.push((-@hash_left["X^0"] / @hash_left["X^1"]))
+        elsif @degree == 2
+            # Calcul du discriminant
+            @delta = (@hash_left["X^1"] ** 2) - 4 * @hash_left["X^2"] * @hash_left["X^0"]
+            puts "Delta: #{@delta}".yellow
+            # Solutions
+            if @delta < 0
+              puts "Le polynome n'admet aucune solution réelle".red
+              puts "En revanche il admet 2 solutions complexes".green
 
-            @solutions.push("Solutions:".green)
+              @solutions.push("(#{-@hash_left["X^1"]} - i * sqrt(#{@delta.abs})) / 2 * (#{@hash_left["X^2"]})")
+              @solutions.push("(#{-@hash_left["X^1"]} + i * sqrt(#{@delta.abs})) / 2 * (#{@hash_left["X^2"]})")
 
-            @solutions.push(((-@hash_left["X^1"] - sqrt(@delta)) / (2 * @hash_left["X^2"])).to_c)
-            @solutions.push(((-@hash_left["X^1"] + sqrt(@delta)) / (2 * @hash_left["X^2"])).to_c)
-          elsif @delta == 0
-            puts "Le polynome admet 1 solution réelle".green
-            @solutions.push((-@hash_left["X^1"]) / 2 * @hash_left["X^2"])
-          else
-            puts "Le polynome admet 2 solutions réelles".green
-            @solutions.push((-@hash_left["X^1"] - sqrt(@delta)) / (2 * @hash_left["X^2"]))
-            @solutions.push((-@hash_left["X^1"] + sqrt(@delta)) / (2 * @hash_left["X^2"]))
-          end
-      else
-        puts "L'equation polynomial est de degré supérieur à 2".red
+              @solutions.push("Solutions:".green)
+
+              @solutions.push(((-@hash_left["X^1"] - sqrt(@delta)) / (2 * @hash_left["X^2"])).to_c)
+              @solutions.push(((-@hash_left["X^1"] + sqrt(@delta)) / (2 * @hash_left["X^2"])).to_c)
+            elsif @delta == 0
+              puts "Le polynome admet 1 solution réelle".green
+              @solutions.push((-@hash_left["X^1"]) / 2 * @hash_left["X^2"])
+            else
+              puts "Le polynome admet 2 solutions réelles".green
+              @solutions.push((-@hash_left["X^1"] - sqrt(@delta)) / (2 * @hash_left["X^2"]))
+              @solutions.push((-@hash_left["X^1"] + sqrt(@delta)) / (2 * @hash_left["X^2"]))
+            end
+        else
+          puts "L'equation polynomial est de degré supérieur à 2".red
+        end
+
+      rescue Exception
+        system "clear"
+        puts "Incorrect equation"
       end
 
       @solutions.each do |solution|
