@@ -18,7 +18,7 @@ class Polynomial
 
     # Trouvé l'exposant de X maximum pour la creation du hash avant reduction
     # ex: 2 * X^0 + 3 * X^1 = 1 * X^0 + 3 * X^14 => @max = 15
-    # Oui un tableau commence par 0 d'ou le + 1
+    # Le futur tableau commence par 0 d'ou le + 1, on veut atteindre 15
     def get_max
       tmp = @equation.split("X^")[1..-1]
       tmp.each do |t|
@@ -85,7 +85,7 @@ class Polynomial
         @hash_left["X^0"] = 0.0
       end
 
-      # Inversion des hash si necessaire, on veut le '= 0' a droite
+      # Inversion des hash si necessaire, on veut le plus court a droite
       if @hash_left.count < @hash_right.count
         tmp = @hash_left
         @hash_left = @hash_right
@@ -102,12 +102,11 @@ class Polynomial
           @hash_right.delete("X^#{i}")
 
           # On detruit la clé si la valeur est egale à 0 biensur
-          if @hash_left["X^#{i}"] == 0.0
+          if @hash_left["X^#{i}"] == 0.0 and i == 0
             @hash_left.delete("X^#{i}")
           end
         end
       end
-
 
       # Affichage de la forme reduite, c'est moche mais ça fonctionne
       unless @hash_left.empty? and @hash_right.empty?
